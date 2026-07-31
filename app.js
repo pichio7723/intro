@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 const rutaImagen = path.join(__dirname, 'images.jpg');
 
 app.get('/', (req, res) => {
-  res.send(`<h1>IDK<h1>`);
+  res.send('Holav mundo!');
 });
 
 app.get('/bart', (req, res) => {
