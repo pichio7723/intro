@@ -16,13 +16,34 @@ app.get('/bart', (req, res) => {
   res.sendFile(rutaImagen);
 });
 
-app.get('/route1', (req,res) => {
-  res.send(`<h1>Respuesta res<h1>`)
-})
+app.get('/saludo/:nombre', (req, res) => {
+  const nombreUsuario = req.params.nombre;
+  const statusCode = 400;
 
-app.get('/route2', (req,res) => {
-  res.json({"nombre" : "camilo", "edad" : "17"})
-})
+  if (nombreUsuario.length < 3) {
+    
+    return res.status(statusCode).json({
+      status: "error",
+      statusCode: statusCode,
+      message: "Error, la longitud del nombre es muy pequeña (mínimo 3 caracteres)"
+    });
+  }
+
+
+  res.send(`Hola! ${nombreUsuario}`);
+});
+
+app.get('/producto/:id/:producto_nombre/:categoria', (req, res) => {
+  let id = req.params.id;
+  let producto = req.params.producto_nombre;
+  let categoria = req.params.categoria;
+  
+  res.json({ 
+    [producto]: id, 
+    [producto]: categoria
+  });
+});
+
 
 app.get('/route3/:nombre/:edad', (req,res) => {
   let nombreUsuario = req.params.nombre
