@@ -3,7 +3,7 @@ import "dotenv/config";
 import path from 'path';
 import { fileURLToPath } from 'url';
 const app = express();
-const port = process.env.PUERTO;
+const port = process.env.PUERTO || 8000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rutaImagen = path.join(__dirname, 'images.jpg');
