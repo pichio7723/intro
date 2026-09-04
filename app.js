@@ -1,93 +1,96 @@
-const express = require("express");
-require("dotenv").config();
+const express = require('express');  
+const app = express(); 
+require('dotenv').config();
+const port = process.env.PORT || 3030;
 
-const app = express();
+app.get("/", (req, res) => { 
+res.send('API REST APRENDICES');
+});
 
-const port = process.env.PUERTO || 3000;
-
-// Permite recibir datos JSON
-app.use(express.json());
-
-// Permite recibir datos de formularios
+//midelware para parsear datos del body
+app.use(express.json()); 
 app.use(express.urlencoded({ extended: true }));
 
-// ==========================
-// RUTA PRINCIPAL
-// ==========================
+//leer archivo
+const sistemaArchivo = require('fs');
+const ruta = require('path');
+const rutaArchivo = ruta.join(__dirname, 'datos.json');
 
-app.get("/", (req, res) => {
-    res.send("Aprendices ficha 3407186");
-});
 
-// ==========================
-// CRUD APRENDICES
-// ==========================
+//endpoint para  listar de aprendices
 
-// GET - listar aprendices
 app.get("/api/aprendices", (req, res) => {
-    res.json({
-        mensaje: "lista de aprendices"
-    });
-});
-
-// POST - crear aprendiz
-app.post("/api/aprendices", (req, res) => {
-    res.status(201).json({
-        mensaje: "crear aprendiz"
-    });
-});
-
-// PUT - editar aprendiz por ID
-app.put("/api/aprendices/:id", (req, res) => {
-    const { id } = req.params;
-
-    res.status(200).json({
-        mensaje: `Editar aprendiz con id ${id}`
-    });
-});
-
-// DELETE - eliminar aprendiz por ID
-app.delete("/api/aprendices/:id", (req, res) => {
-    const { id } = req.params;
-
-    res.status(200).json({
-        mensaje: `Eliminar aprendiz con id ${id}`
-    });
-});
-
-// ==========================
-// RECIBIR JSON
-// ==========================
-
-app.post ("/rutaJson", (req, res) =>{
-    const todosDatos = req.body
-    const edad = req.body.edad2
-    if (edad>=18) {
-        res.json({mensaje: "es mayor"})
-    } else {
-        res.json({mensaje:"es menor"})
-    }
-    res.json ({datosJson: todosDatos })
+    sistemaArchivo.readFile(rutaArchivo, 'utf-8', (error, datos) => {
+        if (error) {
+            return res.status(500).json({ mensaje: "Error al leer el archivo" });
+        }
+        const listaAprendices = JSON.parse(datos)     
+        res.status(200).json({"mensaje": listaAprendices})
+  })
 })
 
-// ==========================
-// RECIBIR FORMULARIO
-// ==========================
+//endpoint para listar un aprendiz
 
-app.post("/ruta/formulario", (req, res) => {
-    const todosDatos = req.body;
-    const programa= req.body.prpgrama
-    res.json({todosDatos:"todosdatos",Miprograma:programa})
+app.get("/api/aprendices/:id", (req, res) => {      
+    res.status(200).json({
+        "mensaje": "Lista de un aprendiz"
+    })
+})  
 
-    res.json({
-        datosFormulario: todosDatos
+//endpoint para crear un aprendiz
+
+app.post("/api/aprendices", (req, res) => {
+    const nuevoAprendiz = req.body;
+
+    //leer archivo y agregar un nuevo aprendiz
+    sistemaArchivo.readFile(rutaArchivo, 'utf-8', (error, datos) => {
+        if (error) {
+            return res.status(500).json({ mensaje: "Error al leer el archivo" });
+        }
+        const listaAprendices = JSON.parse(datos)     
+        // agregar el nuevo aprendiz al arreglo
+        listaAprendices.push(nuevoAprendiz);
+        sistemaArchivo.writeFile(rutaArchivo, JSON.stringify(listaAprendices, null, 2), (error) => {
+            if (error) {
+                return res.status(500).json({ mensaje: "no se puede escribir en el archivo, o BD" });
+            }
+        res.status(200).json({"mensaje": "Aprendiz creado", "datos aprendiz": nuevoAprendiz})
     });
+  });
 });
 
-// ==========================
-// INICIAR SERVIDOR
-// ==========================
+//endpoint para actualizar un aprendices
 
-app.listen(port, () => {
-    console.log(`Servidor ejecutándose en http://localhost:${port}`);
+app.put("/api/aprendices/:id", (req, res) => {
+    res.status(200).json({
+        "mensaje": "Actualizar aprendiz"
+    })
+})
+ 
+//endpoint para eliminar aprendices
+
+app.delete("/api/aprendices/:id", (req, res) => {
+    res.status(200).json({
+        "mensaje": "Eliminar aprendiz"
+    })
+})             
+
+ app.post("/rutaJson", (req, res) => {
+      const todosDatos = req.body;
+      const edad = req.body.edad2
+      if (edad>=18) {
+        res.json({mensaje: "No es mayor de edad"});
+      } else {
+        res.json({datosJson: todosDatos});
+      }
+  });
+
+app.post("/rutaFormulario", (req, res) => {
+     const todosDatos = req.body;
+    const programa = req.body.programa;
+     res.json({todosDatos: todosDatos, Miprograma: programa});
 });
+
+app.listen(port, () => { 
+console.log( `SERVIDOR: http://localhost:${port}`);
+}); 
