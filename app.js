@@ -1,6 +1,4 @@
-const express = require("express");
-require("dotenv").config();
-
+const express = require('express');  
 const app = express();
 const port = process.env.PUERTO || 3000;
 
@@ -106,5 +104,5 @@ app.use(manejadordeErrores);
 // INICIAR SERVIDOR (Siempre al final)
 // ==========================
 app.listen(port, () => {
-    console.log(`Servidor ejecutándose en http://localhost:${port}`);
+  console.log(`SERVIDOR: http://localhost:${port}`);
 });
