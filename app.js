@@ -1,108 +1,171 @@
-const express = require('express');  
-const app = express();
-const port = process.env.PUERTO || 3000;
+const { error } = require('console');
+const express = require('express');
+const app= express();
+require('dotenv').config();
+const port = process.env.PUERTO || 3030;
+const jwt = require ("jsonwebtoken")
+//importacion  de middleware propios
+const registroMiddleware = require("./src/middleware/registroMiddleware")
+const manejadoErrores = require("./src/middleware/manejadoErrores")
+const autenticacion = require("./src/middleware/autenticacion")
 
-const manejadordeErrores = require("./middleware/manejadorErrores");
-const RegistrodeQueris = require("./middleware/registromiddleware");
-const autenticacion = require("./middleware/autenticacion");
-const jwt = require("jsonwebtoken");
+//middleware para parsear datos del body
+app.use(express.json()) 
+app.use (express.urlencoded({extended:true}))
+//middleware propios 
+app.use((req, res, next)=>{
+    console.log(`Tiempo milisegundos: ${Date.now()}`)
+    console.log(`Fecha: ${new Date().toISOString()}`)
+    next()
+})
+app.use(registroMiddleware)
 
-// MIDDLEWARES GENERALES 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(RegistrodeQueris);
 
 
-app.get("/", (req, res) => {
-    res.send("Aprendices ficha 3407186");
-});
+//leer archivo
+const sistemaArchivo = require("fs");
+const ruta = require("path");
 
-app.post("/registrar", (req, res) => {
-    const usuariobd = {
-        "usuario": "camilo",
-        "clave": "root1234"
-    };
-    
-    const { usuario, clave } = req.body;
-    
-    if (!usuario || !clave) {
-        return res.status(400).json({ mensaje: "Faltan usuario o clave en la petición" });
+const rutaArchivo = ruta.join(__dirname, "datos.json");
+// libreria para subir archivos
+const multer =require("multer")
+//consfigurar almacenamiento archivos
+const almacenamiento=multer.diskStorage({
+    destination:(req,file,cb)=>{
+        cb(null,"misImagenes/")
+    },
+    filename:(req,file,cb)=>{
+        const extension = ruta.extname(file.originalname)
+        cb(null,`${Date.now()}${extension}`)
     }
 
-    if (usuario !== usuariobd.usuario || clave !== usuariobd.clave) {
-        return res.status(400).json({ mensaje: "credenciales NO validas" });
-    }
+})
 
-    // Corregido: cambié 'req.usuario' por 'usuario'
-    const token = jwt.sign(
-        { "usuario": usuario },
-        process.env.JWT_SECRET || "firma_secreta_por_defecto",
-        { expiresIn: "1h" }
-    );
+const cargar = multer({storage: almacenamiento})
+
+
+app.get('/', (req, res) => {
+    res.send('  N de M');
+});
+
+
+//endpoint para listar aprendices
+app.get('/api/aprendices', (req , res) => {
+    //leer archivo json
+    sistemaArchivo.readFile(rutaArchivo, "utf-8", (error, datos)=>{
+        if (error){
+            return res.status(500).json({Error: "No se puede leer rutaArchivo, o BD"})
+        }
+        const listaAprendices = JSON.parse(datos)
+        res.status(200).json ({"mensaje":listaAprendices})
+    })
     
-    return res.json({ token });
-});
+})
+//endpoint para Listar un aprendiz
 
-// ==========================
-// CRUD APRENDICES
-// ==========================
+app.get('/api/aprendices/:id',(req, res) =>{
+    res.status(200).json ({
+        "mensaje":"Listar un aprendiz"
+         
+    })
+})
 
-app.get("/api/aprendices", (req, res) => {
-    res.json({ mensaje: "lista de aprendices" });
-});
+//endpoint para crear aprendices
 
-app.post("/api/aprendices", (req, res) => {
-    res.status(201).json({ mensaje: "crear aprendiz" });
-});
-
-app.get("/error", (req, res, next) => {
-    next(new Error("error intencional"));
-});
-
-app.get("/rutaprotegida", autenticacion, (req, res) => {
-    res.status(200).json({ mensaje: "ingreso a la protegida" });
-});
-
-app.put("/api/aprendices/:id", (req, res) => {
-    const { id } = req.params;
-    res.status(200).json({ mensaje: `Editar aprendiz con id ${id}` });
-});
-
-app.delete("/api/aprendices/:id", (req, res) => {
-    const { id } = req.params;
-    res.status(200).json({ mensaje: `Eliminar aprendiz con id ${id}` });
-});
-
-
-// ==========================
-app.post("/rutaJson", (req, res) => {
-    const todosDatos = req.body;
-    const edad = req.body.edad2;
+app.post('/api/aprendices',cargar.single("imagen"),(req, res) =>{
+    const datosAprendiz = req.body 
+    //AGREGAR LA RUTA DE LA IMAGEN
+    datosAprendiz.imagen = req.file? `/misImagenes/${req.file.filename}` : "sin imagen"
+    //leer archivo json
+    sistemaArchivo.readFile(rutaArchivo, "utf-8", (error, datos)=>{
+        if (error){
+            return res.status(500).json({Error: "No se puede leer rutaArchivo, o BD"})
+        }
+        const listaAprendices = JSON.parse(datos)
+        //adicionar el nuevo aprendiz a la lista
+        listaAprendices.push(datosAprendiz)
+        sistemaArchivo.writeFile(rutaArchivo,JSON.stringify(listaAprendices, null, 2), (error)=>{
+            if (error){
+            return res.status(500).json({Error: "No se puede escribir en el archivo, o BD"})
+            }
+            res.status(200).json ({"mensaje":"Aprendiz creado", "Datos Aprendiz": datosAprendiz})
+        })
+        
+    })
     
+})
+
+//endpoint para editar aprendices
+
+app.put('/api/aprendices/:id',(req, res) =>{
+    res.status(200).json ({
+        "mensaje":"Editar aprendices"
+         
+    })
+})
+
+//endpoint para Eliminar aprendices
+
+app.delete('/api/aprendices/:id',(req, res) =>{
+    res.status(200).json ({
+        "mensaje":"Eliminar aprendices"
+         
+    })
+})
+
+//
+app.post("/rutaJson", (req, res)=>{
+    const todosDatos =req.body
+    const edad =req.body.Edad
     if (edad >= 18) {
-        return res.json({ mensaje: "es mayor", datosJson: todosDatos });
-    } else {
-        return res.json({ mensaje: "es menor", datosJson: todosDatos });
+        res.json({"mensaje":"Es mayor de edad"})
+    }else {
+        res.json({"mensaje":"Es menor"})
     }
-});
+    res.json({datosJson: todosDatos})
+})
 
-
-app.post("/ruta/formulario", (req, res) => {
-    const todosDatos = req.body;
-    const programa = req.body.programa;
+app.post("/rutaFormularios", (req, res)=>{
+    const todosDatos =req.body
+    const programa = req.body.programa
     
-    return res.json({
-        todosDatos: "todosdatos",
-        Miprograma: programa,
-        datosFormulario: todosDatos
-    });
-});
+    res.json({Todosdatos: todosDatos, Mi_Programa: programa})
+})
+//error provocado
+app.get("/error",(req, res, next)=>{
+    next(new Error("error intencional de mi app"))    
+})
+//ruta protegida
+app.get("/api/rutaprotegida",autenticacion,(req, res)=>{
+    res.status(200).json({mensaje: "esta es mi ruta protegida !!!"})
+})
 
-app.use(manejadordeErrores);
+//login, inicio de sesion 
+app.post("/api/login", (req, res)=>{
+    //simulador datos de la db
+    const usuarioBd = {
+        "usuario":"jonny",
+        "clave":"abc123"
+    }
+    const {usuario, clave} = req.body
+    //validar datos
+    if(usuario !== usuarioBd.usuario || clave !== usuarioBd.clave){
+        res.status(400).json({mensaje: "credecnciales no validas, usuario y clave incorrectos"})
+    }
+    //crear variables para almacenar 
+    const token = jwt.sign(
+        //datos usuario
+        {"usuario": req.usuario},
+        //generar token
+        process.env.JWT_SECRET,
+        {expiresIn: "1h"}
+    )
+})
 
-// ==========================
-// INICIAR SERVIDOR (Siempre al final)
-// ==========================
+
+
+app.use(manejadoErrores)
+
 app.listen(port, () => {
-  console.log(`SERVIDOR: http://localhost:${port}`);
+    console.log( `Servidor: http://localhost:${port}` );
 });
