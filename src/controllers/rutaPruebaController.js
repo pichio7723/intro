@@ -1,6 +1,6 @@
-//finciones asincronas, y capturar errores try catch
-const mostrarRuta = (req,res)=>{
-    res.json({mensaje: "este rutaPrueba y personal con controller."})
-}
+const mostrarRuta = (req, res) => {
+    res.json({mensaje: "Es mi rutaPrueba y Personal con controller"})
 
-module.exports = mostrarRuta
+}  
+
+module.exports = mostrarRuta 

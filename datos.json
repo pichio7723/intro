@@ -1,6 +1,14 @@
-{
-    "nombre": "Camilo",
-    "edad": "17",
-    "correo": "luiscamilorojasrueda@gmail.com",
-    "clave": "root1234"
-}
+[
+  {
+    "id": 1,
+    "nombre": "Samantha",
+    "apellido": "Loaiza",
+    "email": "juan.perez@example.com"
+  },
+  {
+    "nombre": "Samantha",
+    "edad": 17,
+    "correo": "sam@gmail.com",
+    "imagen": "sin imagen"
+  }
+]
